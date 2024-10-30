@@ -2,131 +2,70 @@ import streamlit as st
 import random
 from collections import Counter
 import time
-import json
-from pathlib import Path
-import base64
-
-def local_css():
-    st.markdown("""
-    <style>
-        .dice-container {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            flex-wrap: wrap;
-        }
-        .dice {
-            width: 50px;
-            height: 50px;
-            background: white;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border: 2px solid #333;
-        }
-        .player-card {
-            background: #2c3e50;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 10px 0;
-            color: white;
-        }
-        .active-player {
-            border: 3px solid #e74c3c;
-        }
-        .bid-history {
-            max-height: 200px;
-            overflow-y: auto;
-            background: #34495e;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .game-controls {
-            background: #34495e;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        .eliminated {
-            opacity: 0.5;
-        }
-        .stButton button {
-            background-color: #3498db;
-            color: white;
-            font-weight: bold;
-        }
-        .call-bluff button {
-            background-color: #e74c3c !important;
-        }
-        .dice-shake {
-            animation: shake 0.5s ease-in-out;
-        }
-        @keyframes shake {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(-10deg); }
-            50% { transform: rotate(10deg); }
-            75% { transform: rotate(-5deg); }
-            100% { transform: rotate(0deg); }
-        }
-    </style>
-    """, unsafe_allow_html=True)
 
 def init_session_state():
-    defaults = {
-        'game_started': False,
-        'current_player': 0,
-        'dice': {},
-        'last_bid': {'quantity': 0, 'value': 0},
-        'player_count': 2,
-        'game_over': False,
-        'dice_per_player': 5,
-        'eliminated_players': set(),
-        'bid_history': [],
-        'player_names': {},
-        'shake_dice': False,
-        'animations_complete': False,
-        'round_number': 1,
-        'player_stats': {},
-        'game_mode': 'normal',  # normal or tournament
-        'tournament_scores': {},
-        'sound_enabled': True
-    }
+    if 'game_started' not in st.session_state:
+        st.session_state.game_started = False
+    if 'current_player' not in st.session_state:
+        st.session_state.current_player = 0
+    if 'dice' not in st.session_state:
+        st.session_state.dice = {}
+    if 'last_bid' not in st.session_state:
+        st.session_state.last_bid = {'quantity': 0, 'value': 0, 'player': None}
+    if 'player_count' not in st.session_state:
+        st.session_state.player_count = 2
+    if 'game_over' not in st.session_state:
+        st.session_state.game_over = False
+    if 'dice_per_player' not in st.session_state:
+        st.session_state.dice_per_player = 5
+    if 'eliminated_players' not in st.session_state:
+        st.session_state.eliminated_players = set()
+    if 'player_dice_counts' not in st.session_state:
+        st.session_state.player_dice_counts = {}
+    if 'ai_difficulty' not in st.session_state:
+        st.session_state.ai_difficulty = 'Medium'
+    if 'game_mode' not in st.session_state:
+        st.session_state.game_mode = 'Player vs AI'
+    if 'bid_history' not in st.session_state:
+        st.session_state.bid_history = []
+    if 'round_number' not in st.session_state:
+        st.session_state.round_number = 1
+
+def get_ai_move(dice_count, last_bid, difficulty):
+    if last_bid['quantity'] == 0:
+        # Initial bid
+        return {'quantity': 1, 'value': random.randint(1, 6)}
     
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-def get_player_avatar(player_index):
-    # Generate consistent colorful avatars based on player index
-    colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22']
-    return f"""
-    <div style="
-        width: 40px;
-        height: 40px;
-        background-color: {colors[player_index % len(colors)]};
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-weight: bold;
-        font-size: 20px;
-    ">
-        {player_index + 1}
-    </div>
-    """
-
-def display_dice(dice_values, shake=False):
-    dice_html = '<div class="dice-container">'
-    for value in dice_values:
-        shake_class = "dice-shake" if shake else ""
-        dice_html += f'<div class="dice {shake_class}">{value}</div>'
-    dice_html += '</div>'
-    return dice_html
+    if difficulty == 'Easy':
+        # Simple increment of last bid
+        if last_bid['value'] < 6:
+            return {'quantity': last_bid['quantity'], 'value': last_bid['value'] + 1}
+        else:
+            return {'quantity': last_bid['quantity'] + 1, 'value': 1}
+    
+    elif difficulty == 'Medium':
+        # More strategic bidding based on own dice
+        own_dice = st.session_state.dice[st.session_state.current_player]
+        dice_counts = Counter(own_dice)
+        
+        # Count ones (wild) separately
+        wild_count = dice_counts[1]
+        
+        # Find the most common non-wild value
+        most_common_value = max(range(2, 7), key=lambda x: dice_counts[x])
+        most_common_count = dice_counts[most_common_value] + wild_count
+        
+        if random.random() < 0.7:  # 70% chance to make a "safe" bid
+            if most_common_count >= last_bid['quantity']:
+                return {'quantity': last_bid['quantity'], 
+                       'value': most_common_value}
+            else:
+                # Call bluff if the bid seems too high
+                return None
+        else:
+            # Make a slightly risky bid
+            return {'quantity': last_bid['quantity'] + 1, 
+                   'value': random.randint(1, 6)}
 
 def roll_dice(num_dice):
     return [random.randint(1, 6) for _ in range(num_dice)]
@@ -135,228 +74,226 @@ def check_bid(bid_quantity, bid_value):
     total_count = 0
     for player_dice in st.session_state.dice.values():
         count = Counter(player_dice)
-        if st.session_state.game_mode == 'normal':
-            # In normal mode, 1s are wild
-            total_count += count[bid_value] + count[1]
-        else:
-            total_count += count[bid_value]
+        # Count exact matches and ones (wild)
+        total_count += count[bid_value] + count[1]
     return total_count >= bid_quantity
+
+def start_new_round():
+    # Roll new dice for remaining players
+    st.session_state.dice = {
+        i: roll_dice(st.session_state.player_dice_counts[i])
+        for i in range(st.session_state.player_count)
+        if i not in st.session_state.eliminated_players
+    }
+    st.session_state.last_bid = {'quantity': 0, 'value': 0, 'player': None}
+    st.session_state.round_number += 1
 
 def start_new_game():
     st.session_state.game_started = True
     st.session_state.current_player = 0
-    st.session_state.last_bid = {'quantity': 0, 'value': 0}
+    st.session_state.last_bid = {'quantity': 0, 'value': 0, 'player': None}
     st.session_state.game_over = False
     st.session_state.eliminated_players = set()
-    st.session_state.bid_history = []
     st.session_state.round_number = 1
-    st.session_state.shake_dice = True
-    st.session_state.animations_complete = False
+    st.session_state.bid_history = []
     
-    # Initialize player stats
-    st.session_state.player_stats = {
-        i: {
-            'successful_bluff_calls': 0,
-            'failed_bluff_calls': 0,
-            'times_caught_bluffing': 0
-        } for i in range(st.session_state.player_count)
+    # Initialize dice counts for each player
+    st.session_state.player_dice_counts = {
+        i: st.session_state.dice_per_player 
+        for i in range(st.session_state.player_count)
     }
     
-    # Roll dice for each player
+    # Initial dice roll
     st.session_state.dice = {
-        i: roll_dice(st.session_state.dice_per_player) 
+        i: roll_dice(st.session_state.dice_per_player)
         for i in range(st.session_state.player_count)
     }
 
-def display_game_stats():
-    st.sidebar.header("Game Statistics")
-    st.sidebar.write(f"Round: {st.session_state.round_number}")
-    
-    for player in range(st.session_state.player_count):
-        if player not in st.session_state.eliminated_players:
-            stats = st.session_state.player_stats[player]
-            st.sidebar.markdown(f"""
-            **Player {player + 1}**
-            - Successful bluff calls: {stats['successful_bluff_calls']}
-            - Failed bluff calls: {stats['failed_bluff_calls']}
-            - Times caught bluffing: {stats['times_caught_bluffing']}
-            """)
-
-def next_player():
-    next_player = (st.session_state.current_player + 1) % st.session_state.player_count
-    while next_player in st.session_state.eliminated_players:
-        next_player = (next_player + 1) % st.session_state.player_count
-    st.session_state.current_player = next_player
-
 def main():
-    st.set_page_config(page_title="Liar's Dice", page_icon="🎲", layout="wide")
-    local_css()
+    st.title("🎲 Liar's Dice")
+    
     init_session_state()
     
-    col1, col2, col3 = st.columns([2,6,2])
-    
-    with col1:
-        st.image("https://via.placeholder.com/150", caption="Liar's Dice")
-        if not st.session_state.game_started:
-            st.session_state.game_mode = st.radio(
+    if not st.session_state.game_started:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.session_state.game_mode = st.selectbox(
                 "Game Mode",
-                ['normal', 'tournament'],
-                format_func=lambda x: x.capitalize()
+                ['Player vs AI', 'Player vs Player']
             )
-    
-    with col2:
-        st.title("🎲 Liar's Dice")
-        
-        if not st.session_state.game_started:
-            st.write("Welcome to Liar's Dice! Set up your game below.")
             
-            col_setup1, col_setup2 = st.columns(2)
-            with col_setup1:
+            if st.session_state.game_mode == 'Player vs AI':
+                st.session_state.ai_difficulty = st.selectbox(
+                    "AI Difficulty",
+                    ['Easy', 'Medium', 'Hard']
+                )
+                st.session_state.player_count = 2
+            else:
                 st.session_state.player_count = st.number_input(
-                    "Number of players:", min_value=2, max_value=6, value=2
+                    "Number of players",
+                    min_value=2,
+                    max_value=4,
+                    value=2
                 )
-            with col_setup2:
-                st.session_state.dice_per_player = st.number_input(
-                    "Dice per player:", min_value=1, max_value=5, value=5
-                )
-            
-            # Player name inputs
-            st.write("Enter player names (optional):")
-            for i in range(st.session_state.player_count):
-                st.session_state.player_names[i] = st.text_input(
-                    f"Player {i+1} name:",
-                    value=f"Player {i+1}",
-                    key=f"player_name_{i}"
-                )
-            
-            if st.button("Start Game", key="start_game"):
-                start_new_game()
         
-        else:
-            # Game interface
-            if not st.session_state.game_over:
-                # Current player info
-                current_player_name = st.session_state.player_names[st.session_state.current_player]
-                st.markdown(f"### Current Turn: {current_player_name}")
-                
-                # Display dice for current player
-                st.markdown("### Your Dice:")
-                st.markdown(
-                    display_dice(
-                        st.session_state.dice[st.session_state.current_player],
-                        st.session_state.shake_dice
-                    ),
-                    unsafe_allow_html=True
-                )
-                
-                # Game controls
-                st.markdown("### Make Your Move")
-                with st.container():
-                    col_bid1, col_bid2, col_bid3 = st.columns([2,2,3])
-                    
-                    with col_bid1:
-                        new_quantity = st.number_input(
-                            "Bid quantity:",
-                            min_value=max(1, st.session_state.last_bid['quantity']),
-                            value=max(1, st.session_state.last_bid['quantity'])
-                        )
-                    
-                    with col_bid2:
-                        new_value = st.number_input(
-                            "Bid value (1-6):",
-                            min_value=1,
-                            max_value=6,
-                            value=max(1, st.session_state.last_bid['value'])
-                        )
-                    
-                    with col_bid3:
-                        col_action1, col_action2 = st.columns(2)
-                        with col_action1:
-                            if st.button("Make Bid", key="make_bid"):
-                                if new_quantity < st.session_state.last_bid['quantity'] or \
-                                   (new_quantity == st.session_state.last_bid['quantity'] and 
-                                    new_value <= st.session_state.last_bid['value']):
-                                    st.error("Invalid bid! Must be higher than the last bid.")
-                                else:
-                                    st.session_state.last_bid = {
-                                        'quantity': new_quantity,
-                                        'value': new_value
-                                    }
-                                    st.session_state.bid_history.append({
-                                        'player': current_player_name,
-                                        'bid': f"{new_quantity} dice showing {new_value}"
-                                    })
-                                    next_player()
-                        
-                        with col_action2:
-                            if st.session_state.last_bid['quantity'] > 0:
-                                if st.button("Call Bluff!", key="call_bluff", type="primary"):
-                                    is_correct = check_bid(
-                                        st.session_state.last_bid['quantity'],
-                                        st.session_state.last_bid['value']
-                                    )
-                                    
-                                    # Show all dice
-                                    st.markdown("### All Dice on the Table:")
-                                    for player, dice in st.session_state.dice.items():
-                                        player_name = st.session_state.player_names[player]
-                                        st.markdown(
-                                            f"**{player_name}:** " + 
-                                            display_dice(dice, True),
-                                            unsafe_allow_html=True
-                                        )
-                                    
-                                    if is_correct:
-                                        st.error("Wrong call! The bid was correct!")
-                                        st.session_state.player_stats[st.session_state.current_player]['failed_bluff_calls'] += 1
-                                        st.session_state.eliminated_players.add(st.session_state.current_player)
-                                    else:
-                                        st.success("Good call! The bid was a bluff!")
-                                        prev_player = (st.session_state.current_player - 1) % st.session_state.player_count
-                                        st.session_state.player_stats[st.session_state.current_player]['successful_bluff_calls'] += 1
-                                        st.session_state.player_stats[prev_player]['times_caught_bluffing'] += 1
-                                        st.session_state.eliminated_players.add(prev_player)
-                                    
-                                    # Check if game is over
-                                    if len(st.session_state.eliminated_players) >= st.session_state.player_count - 1:
-                                        st.session_state.game_over = True
-                                        winner = next(i for i in range(st.session_state.player_count) 
-                                                    if i not in st.session_state.eliminated_players)
-                                        winner_name = st.session_state.player_names[winner]
-                                        st.balloons()
-                                        st.success(f"Game Over! {winner_name} wins! 🏆")
-                                        
-                                        if st.session_state.game_mode == 'tournament':
-                                            if winner not in st.session_state.tournament_scores:
-                                                st.session_state.tournament_scores[winner] = 0
-                                            st.session_state.tournament_scores[winner] += 1
-                                    else:
-                                        # Start new round
-                                        st.session_state.round_number += 1
-                                        st.session_state.last_bid = {'quantity': 0, 'value': 0}
-                                        st.session_state.dice = {
-                                            i: roll_dice(st.session_state.dice_per_player)
-                                            for i in range(st.session_state.player_count)
-                                            if i not in st.session_state.eliminated_players
-                                        }
-                
-                # Bid history
-                st.markdown("### Bid History")
-                for bid in reversed(st.session_state.bid_history[-5:]):
-                    st.write(f"{bid['player']}: {bid['bid']}")
-            
-            if st.session_state.game_over:
-                if st.button("Start New Game", key="new_game"):
-                    start_new_game()
+        with col2:
+            st.session_state.dice_per_player = st.number_input(
+                "Dice per player",
+                min_value=1,
+                max_value=5,
+                value=5
+            )
+        
+        if st.button("Start Game"):
+            start_new_game()
     
-    with col3:
-        display_game_stats()
+    else:
+        # Game interface
+        col1, col2 = st.columns([2, 1])
         
-        if st.session_state.game_mode == 'tournament':
-            st.sidebar.markdown("### Tournament Scores")
-            for player, score in st.session_state.tournament_scores.items():
-                player_name = st.session_state.player_names[player]
-                st.sidebar.write(f"{player_name}: {score} wins")
+        with col1:
+            st.subheader(f"Round {st.session_state.round_number}")
+            
+            # Show current player's dice
+            current_player = "Your" if st.session_state.current_player == 0 else f"Player {st.session_state.current_player + 1}'s"
+            st.write(f"{current_player} turn")
+            
+            if st.session_state.current_player == 0 or st.session_state.game_mode == 'Player vs Player':
+                st.write("Your dice:", st.session_state.dice[st.session_state.current_player])
+                
+                # Show last bid if any
+                if st.session_state.last_bid['quantity'] > 0:
+                    st.write(f"Last bid: {st.session_state.last_bid['quantity']} dice showing {st.session_state.last_bid['value']}")
+                
+                # Bid controls
+                col_bid1, col_bid2, col_bid3 = st.columns(3)
+                
+                with col_bid1:
+                    quantity = st.number_input(
+                        "Quantity",
+                        min_value=max(1, st.session_state.last_bid['quantity']),
+                        value=max(1, st.session_state.last_bid['quantity'])
+                    )
+                
+                with col_bid2:
+                    value = st.number_input(
+                        "Value",
+                        min_value=1,
+                        max_value=6,
+                        value=max(1, st.session_state.last_bid['value'])
+                    )
+                
+                with col_bid3:
+                    if st.button("Make Bid"):
+                        if quantity < st.session_state.last_bid['quantity'] or \
+                           (quantity == st.session_state.last_bid['quantity'] and 
+                            value <= st.session_state.last_bid['value']):
+                            st.error("Invalid bid! Must be higher than the last bid.")
+                        else:
+                            st.session_state.last_bid = {
+                                'quantity': quantity,
+                                'value': value,
+                                'player': st.session_state.current_player
+                            }
+                            st.session_state.bid_history.append(
+                                f"Player {st.session_state.current_player + 1}: {quantity} {value}s"
+                            )
+                            st.session_state.current_player = (st.session_state.current_player + 1) % st.session_state.player_count
+                
+                if st.session_state.last_bid['quantity'] > 0:
+                    if st.button("Call Bluff!", type="primary"):
+                        is_correct = check_bid(
+                            st.session_state.last_bid['quantity'],
+                            st.session_state.last_bid['value']
+                        )
+                        
+                        # Show all dice
+                        st.write("All dice:")
+                        for p, dice in st.session_state.dice.items():
+                            st.write(f"Player {p + 1}:", dice)
+                        
+                        loser = st.session_state.current_player if is_correct else st.session_state.last_bid['player']
+                        st.session_state.player_dice_counts[loser] -= 1
+                        
+                        if st.session_state.player_dice_counts[loser] == 0:
+                            st.session_state.eliminated_players.add(loser)
+                            if len(st.session_state.eliminated_players) == st.session_state.player_count - 1:
+                                winner = next(i for i in range(st.session_state.player_count) 
+                                           if i not in st.session_state.eliminated_players)
+                                st.success(f"Player {winner + 1} wins!")
+                                st.session_state.game_over = True
+                            else:
+                                start_new_round()
+                        else:
+                            start_new_round()
+            
+            else:
+                # AI turn
+                st.write("AI is thinking...")
+                time.sleep(1)  # Simulate AI thinking
+                
+                ai_move = get_ai_move(
+                    st.session_state.player_dice_counts[st.session_state.current_player],
+                    st.session_state.last_bid,
+                    st.session_state.ai_difficulty
+                )
+                
+                if ai_move is None:
+                    # AI calls bluff
+                    st.write("AI calls bluff!")
+                    is_correct = check_bid(
+                        st.session_state.last_bid['quantity'],
+                        st.session_state.last_bid['value']
+                    )
+                    
+                    # Show all dice
+                    st.write("All dice:")
+                    for p, dice in st.session_state.dice.items():
+                        st.write(f"Player {p + 1}:", dice)
+                    
+                    loser = st.session_state.current_player if is_correct else st.session_state.last_bid['player']
+                    st.session_state.player_dice_counts[loser] -= 1
+                    
+                    if st.session_state.player_dice_counts[loser] == 0:
+                        st.session_state.eliminated_players.add(loser)
+                        if len(st.session_state.eliminated_players) == st.session_state.player_count - 1:
+                            winner = next(i for i in range(st.session_state.player_count) 
+                                       if i not in st.session_state.eliminated_players)
+                            st.success(f"Player {winner + 1} wins!")
+                            st.session_state.game_over = True
+                        else:
+                            start_new_round()
+                    else:
+                        start_new_round()
+                
+                else:
+                    # AI makes bid
+                    st.write(f"AI bids {ai_move['quantity']} {ai_move['value']}s")
+                    st.session_state.last_bid = {
+                        'quantity': ai_move['quantity'],
+                        'value': ai_move['value'],
+                        'player': st.session_state.current_player
+                    }
+                    st.session_state.bid_history.append(
+                        f"AI: {ai_move['quantity']} {ai_move['value']}s"
+                    )
+                    st.session_state.current_player = 0
+        
+        with col2:
+            st.subheader("Game Status")
+            for player in range(st.session_state.player_count):
+                if player not in st.session_state.eliminated_players:
+                    name = "You" if player == 0 and st.session_state.game_mode == 'Player vs AI' else f"Player {player + 1}"
+                    st.write(f"{name}: {st.session_state.player_dice_counts[player]} dice")
+            
+            st.subheader("Bid History")
+            for bid in reversed(st.session_state.bid_history[-5:]):
+                st.write(bid)
+        
+        if st.session_state.game_over:
+            if st.button("New Game"):
+                start_new_game()
 
 if __name__ == "__main__":
-    main()</antArtifact>
+    main()
