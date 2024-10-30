@@ -28,8 +28,8 @@ if st.button("Show"):
 # Russian Roulette functionality
 if st.button("Pull the Trigger"):
     # Simulate bullet outcome (1 in 6 chance for the bullet to fire)
-    bullet_chamber = random.randint(1, 6)
-    trigger_pull = random.randint(1, 6)
+    bullet_chamber = random.randint(1, 6)  # The chamber with the bullet
+    trigger_pull = random.randint(1, 6)     # The chamber being pulled
 
     if bullet_chamber == trigger_pull:
         st.write("💥 **Bang! The bullet fired! You are out!**")
