@@ -11,6 +11,7 @@ num_players = st.number_input("Enter the number of players:", min_value=1, max_v
 if 'players' not in st.session_state:
     st.session_state.players = []
 
+# Input for player names
 for i in range(int(num_players)):
     name = st.text_input(f"Enter name for Player {i + 1}:", key=f"name_{i}")
     if name and name not in st.session_state.players:
@@ -29,22 +30,36 @@ if st.button("Show"):
 
 # Russian Roulette section below the existing game content
 
+
+# Variable to track the current player
+if 'current_player_index' not in st.session_state:
+    st.session_state.current_player_index = 0
+
 # Russian Roulette functionality
 if st.button("Pull the Trigger"):
-    # Simulate bullet outcome (1 in 6 chance for the bullet to fire)
-    bullet_chamber = random.randint(1, 6)  # The chamber with the bullet
-    trigger_pull = random.randint(1, 6)     # The chamber being pulled
+    if st.session_state.players:
+        current_player = st.session_state.players[st.session_state.current_player_index]
+        
+        # Simulate bullet outcome (1 in 6 chance for the bullet to fire)
+        bullet_chamber = random.randint(1, 6)  # The chamber with the bullet
+        trigger_pull = random.randint(1, 6)     # The chamber being pulled
 
-    if bullet_chamber == trigger_pull and st.session_state.players:
-        st.write("💥 **Bang! The bullet fired!**")
-
-        # Show option to delete a player
-        player_to_remove = st.selectbox("Select a player to remove:", st.session_state.players)
-        if st.button("Remove Player"):
-            st.session_state.players.remove(player_to_remove)
-            st.success(f"{player_to_remove} has been removed from the game!")
-    else:
-        st.write("🔫 **Click! You are safe!**")
+        if bullet_chamber == trigger_pull:
+            st.write(f"💥 **Bang! The bullet fired! {current_player} is out!**")
+            
+            # Option to remove the current player
+            if st.button(f"Remove {current_player} from the game"):
+                st.session_state.players.remove(current_player)
+                st.success(f"{current_player} has been removed from the game!")
+                # Reset the current player index
+                st.session_state.current_player_index = 0 if st.session_state.players else None
+        else:
+            st.write("🔫 **Click! You are safe!**")
+        
+        # Move to the next player for the next round
+        st.session_state.current_player_index += 1
+        if st.session_state.current_player_index >= len(st.session_state.players):
+            st.session_state.current_player_index = 0  # Loop back to the first player
 
 # Display remaining players
 if st.session_state.players:
