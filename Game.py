@@ -31,12 +31,16 @@ if st.button("Show"):
 # Russian Roulette section below the existing game content
 
 
-# Variable to track the current player
+# Initialize session state variables if they don't exist
 if 'current_player_index' not in st.session_state:
     st.session_state.current_player_index = 0
 
+if 'game_active' not in st.session_state:
+    st.session_state.game_active = True
+
 # Russian Roulette functionality
-if st.button("Pull the Trigger"):
+if st.session_state.game_active and st.button("Pull the Trigger"):
+    # Get the current player
     if st.session_state.players:
         current_player = st.session_state.players[st.session_state.current_player_index]
         
@@ -51,8 +55,15 @@ if st.button("Pull the Trigger"):
             if st.button(f"Remove {current_player} from the game"):
                 st.session_state.players.remove(current_player)
                 st.success(f"{current_player} has been removed from the game!")
-                # Reset the current player index
-                st.session_state.current_player_index = 0 if st.session_state.players else None
+                
+                # Check if the game is still active
+                if len(st.session_state.players) == 0:
+                    st.session_state.game_active = False
+                    st.write("All players are out!")
+                else:
+                    # Reset index if the current player was the last one
+                    if st.session_state.current_player_index >= len(st.session_state.players):
+                        st.session_state.current_player_index = 0  # Loop back to the first player
         else:
             st.write("🔫 **Click! You are safe!**")
         
