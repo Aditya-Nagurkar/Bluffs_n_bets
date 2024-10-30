@@ -12,7 +12,7 @@ for i in range(int(num_players)):
     name = st.text_input(f"Enter name for Player {i + 1}:", key=f"name_{i}")
     
     for j in range(6):
-        st.checkbox("", key=f"checkbox_{i}_{j}", label_visibility="collapsed")
+        st.checkbox("", key=f"checkbox_{i}_{j}", label_visibility="visible")
 
 # Display a random card table name when button is clicked
 if st.button("Show"):
