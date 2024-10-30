@@ -10,12 +10,12 @@ num_players = st.number_input("Enter the number of players:", min_value=1, max_v
 # Input player names and display checkboxes for each player
 for i in range(int(num_players)):
     name = st.text_input(f"Enter name for Player {i + 1}:", key=f"name_{i}")
-    st.write(" ".join([f"Dice {j + 1}" for j in range(6)]))
+    st.write(" ".join([f"{j + 1}" for j in range(6)]))
     for j in range(6):
         st.checkbox("", key=f"checkbox_{i}_{j}", label_visibility="collapsed")
 
 # Display a random card table name when button is clicked
-if st.button("Show Card"):
+if st.button("Show"):
     card_table_options = ["King's Table", "Queen's Table", "Ace's Table"]
     dealt_card_table = random.choice(card_table_options)
-    st.write(f"The card table is: **{dealt_card_table}**")
+    st.write(f"**{dealt_card_table}**")
