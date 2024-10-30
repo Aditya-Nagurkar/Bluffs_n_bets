@@ -16,7 +16,7 @@ for i in range(int(num_players)):
     checkbox_cols = st.columns(6)
     for j in range(6):
         with checkbox_cols[j]:
-            st.checkbox(f"{j + 1}", key=f"checkbox_{i}_{j}")
+            st.checkbox(f" ", key=f"checkbox_{i}_{j}")
 
 # Display a random card table name when the button is clicked
 if st.button("Show"):
