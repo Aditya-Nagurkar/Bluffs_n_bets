@@ -94,11 +94,8 @@ if st.button("Pull the Trigger"):
     if bullet_chamber == trigger_pull:
         # Explosion animation sequence
         explosion_frames = [
-            "💥 *BANG!*",
-            "✨ *BANG!* ✨",
             "💥 *BANG!* 💥",
-            "✨ *BANG!* ✨",
-            "⚡️ *BANG!* ⚡️",
+            "💥 *BANG!* 💥",
             "💥 *BANG!* 💥",
             "🔥 **BANG! The bullet fired! You are out!** 🔥",
             "💥 **BANG! The bullet fired! You are out!** 💥",
