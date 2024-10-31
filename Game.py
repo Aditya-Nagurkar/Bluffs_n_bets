@@ -4,36 +4,36 @@ import random
 # Title for the game setup
 st.title("Liar's Dice Game")
 
-# Get the number of players
-num_players = st.number_input("Enter the number of players:", min_value=1, max_value=10, step=1)
-
-# Store player names in a list
-player_names = []
-dice_selections = {}
-
-# Create session state for player management
+# Initialize player management in session state
 if 'players' not in st.session_state:
     st.session_state.players = []
 
-# Input player names and display checkboxes for each player in a horizontal layout
-for i in range(int(num_players)):
-    if len(st.session_state.players) < num_players:
-        name = st.text_input(f"Enter name for Player {i + 1}:", key=f"name_{i}")
-        st.session_state.players.append(name)  # Collect player names
+# Get the number of players
+num_players = st.number_input("Enter the number of players:", min_value=1, max_value=10, step=1)
 
-    # Display delete button for each player
-    if st.button("Delete Player", key=f"delete_{i}"):
-        if len(st.session_state.players) > i:
+# Update players based on the number input
+if len(st.session_state.players) < num_players:
+    for i in range(len(st.session_state.players), num_players):
+        st.session_state.players.append("")  # Add empty name slots for new players
+
+# Input player names and display delete buttons
+for i in range(num_players):
+    col1, col2 = st.columns([4, 1])  # Two columns for name input and delete button
+    with col1:
+        name = st.text_input(f"Enter name for Player {i + 1}:", value=st.session_state.players[i], key=f"name_{i}")
+        st.session_state.players[i] = name  # Update the player's name in the session state
+    with col2:
+        if st.button("Delete", key=f"delete_{i}"):
             st.session_state.players.pop(i)  # Remove the player from the list
             st.experimental_rerun()  # Refresh the app to reflect changes
 
 # Display the list of players
-if st.session_state.players:
-    st.write("Current Players:")
-    for player in st.session_state.players:
-        st.write(player)
+st.write("Current Players:")
+for player in st.session_state.players:
+    st.write(player)
 
 # Display six checkboxes for dice selections
+dice_selections = {}
 for i, player in enumerate(st.session_state.players):
     cols = st.columns(6)
     dice_selections[i] = []
