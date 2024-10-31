@@ -75,7 +75,7 @@ with main_col2:
         st.write(f"**{st.session_state.current_table}**")
 
 # Russian Roulette section below the existing game content
-st.subheader("Russian Roulette")
+
 
 # Enhanced Russian Roulette functionality with explosion animation
 if st.button("Pull the Trigger"):
@@ -107,7 +107,7 @@ if st.button("Pull the Trigger"):
         
         for frame in explosion_frames:
             result_container.markdown(frame)
-            time.sleep(0.1)
+            time.sleep(0.5)
     else:
         result_container.markdown("🔫 **Click! You are safe!**")
 
