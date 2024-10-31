@@ -1,4 +1,4 @@
-import streamlit as st
+Import streamlit as st
 import random
 import time
 
@@ -111,23 +111,4 @@ if st.button("Pull the Trigger"):
     else:
         result_container.markdown("🔫 **Click! You are safe!**")
 
-# Add custom CSS for mobile devices
-st.write(
-    """
-    <style>
-        @media (max-width: 768px) {
-            /* Mobile-specific styles */
-            .stTextInput {
-                width: 100%; /* Make text inputs full-width on mobile */
-            }
-            .stButton {
-                width: 100%; /* Make buttons full-width on mobile */
-            }
-            .stCheckbox {
-                display: block; /* Display checkboxes individually on mobile */
-            }
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+This is my streamlit code
