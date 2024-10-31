@@ -25,8 +25,8 @@ for i in range(num_players):
         st.session_state.players[i] = st.text_input(f"Enter name for Player {i + 1}:", value=st.session_state.players[i], key=f"name_{i}")
     with col2:
         if st.button("Delete", key=f"delete_{i}"):
-            st.session_state.players.pop(i)
-            st.experimental_rerun()  # Refresh the app to reflect changes
+            del st.session_state.players[i]  # Remove the player without rerunning
+            st.experimental_rerun()  # Trigger a rerun after deleting a player
 
     # Display six checkboxes in a row using st.columns
     cols = st.columns(6)
