@@ -18,6 +18,8 @@ elif len(st.session_state.players) > num_players:
     st.session_state.players = st.session_state.players[:num_players]
 
 # Input player names and display checkboxes for each player in a horizontal layout
+players_to_delete = []  # Temporary list to hold players to delete
+
 for i in range(num_players):
     # Display player name input and delete button in a row
     col1, col2 = st.columns([4, 1])
@@ -25,13 +27,16 @@ for i in range(num_players):
         st.session_state.players[i] = st.text_input(f"Enter name for Player {i + 1}:", value=st.session_state.players[i], key=f"name_{i}")
     with col2:
         if st.button("Delete", key=f"delete_{i}"):
-            del st.session_state.players[i]  # Remove the player without rerunning
-            st.experimental_rerun()  # Trigger a rerun after deleting a player
+            players_to_delete.append(i)  # Mark the player index for deletion
 
     # Display six checkboxes in a row using st.columns
     cols = st.columns(6)
     for j in range(6):
         cols[j].checkbox(" ", key=f"checkbox_{i}_{j}", label_visibility="collapsed")
+
+# Delete marked players after the loop
+for index in sorted(players_to_delete, reverse=True):
+    del st.session_state.players[index]
 
 # Display a random card table name when button is clicked
 if st.button("Show"):
@@ -40,7 +45,6 @@ if st.button("Show"):
     st.write(f"**{dealt_card_table}**")
 
 # Russian Roulette section below the existing game content
-
 
 # Russian Roulette functionality
 if st.button("Pull the Trigger"):
