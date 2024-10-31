@@ -1,4 +1,4 @@
-Import streamlit as st
+import streamlit as st
 import random
 import time
 
@@ -62,20 +62,20 @@ with main_col1:
 
 with main_col2:
     # Card table section with original options
-    
+    st.subheader("Card Table")
     card_table_options = ["King's Table", "Queen's Table", "Ace's Table"]
     
     if 'current_table' not in st.session_state:
         st.session_state.current_table = None
     
-    if st.button("Show"):
+    if st.button("Show Card Table"):
         st.session_state.current_table = random.choice(card_table_options)
     
     if st.session_state.current_table:
         st.write(f"**{st.session_state.current_table}**")
 
 # Russian Roulette section below the existing game content
-
+st.subheader("Russian Roulette")
 
 # Enhanced Russian Roulette functionality with explosion animation
 if st.button("Pull the Trigger"):
@@ -111,4 +111,3 @@ if st.button("Pull the Trigger"):
     else:
         result_container.markdown("🔫 **Click! You are safe!**")
 
-This is my streamlit code
