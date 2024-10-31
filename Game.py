@@ -3,7 +3,7 @@ import random
 import time
 
 # Title for the game setup
-st.title("Liar's Dice Game")
+st.title("Bluffs & Bets Game")
 
 # Initialize session state variables
 if 'players' not in st.session_state:
