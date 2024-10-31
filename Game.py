@@ -30,23 +30,26 @@ with main_col1:
     # Player management section
     for i in range(num_players):
         if i not in st.session_state.deleted_players:
-            # Create a container for each player's section
-            player_container = st.container()
+            # Player name and delete button in the same container
+            name_row = st.container()
             
-            # Player name and delete button row
-            col1, col2 = player_container.columns([4, 1])
-            with col1:
+            # Use columns for name input and delete button
+            name_col, delete_col = name_row.columns([4, 1])
+            with name_col:
                 st.session_state.players[i] = st.text_input(
                     f"Enter name for Player {i + 1}:",
                     value=st.session_state.players[i],
-                    key=f"name_{i}"
+                    key=f"name_{i}",
+                    label_visibility="visible"
                 )
-            with col2:
-                if st.button("Delete", key=f"delete_{i}"):
+            with delete_col:
+                # Add some vertical padding to align with the text input
+                st.write("")  # This creates a small vertical space
+                if st.button("Delete", key=f"delete_{i}", use_container_width=True):
                     st.session_state.deleted_players.add(i)
-
+            
             # Enhanced checkbox layout
-            checkbox_container = player_container.container()
+            checkbox_container = st.container()
             dice_cols = checkbox_container.columns(6)
             
             # Create checkboxes
