@@ -4,13 +4,13 @@ import random
 # Title for the game setup
 st.title("Liar's Dice Game")
 
-# Initialize player names in session state if not already initialized
+# Initialize session state variables
 if 'players' not in st.session_state:
     st.session_state.players = []
-
-# Initialize a flag for UI update after deletion
-if 'player_deleted' not in st.session_state:
-    st.session_state.player_deleted = False
+if 'dice_values' not in st.session_state:
+    st.session_state.dice_values = {}
+if 'deleted_players' not in st.session_state:
+    st.session_state.deleted_players = set()
 
 # Get the number of players
 num_players = st.number_input("Enter the number of players:", min_value=1, max_value=10, step=1)
@@ -21,43 +21,92 @@ if len(st.session_state.players) < num_players:
 elif len(st.session_state.players) > num_players:
     st.session_state.players = st.session_state.players[:num_players]
 
-# Input player names and display checkboxes for each player in a horizontal layout
-for i in range(num_players):
-    # Display player name input and delete button in a row
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        st.session_state.players[i] = st.text_input(f"Enter name for Player {i + 1}:", value=st.session_state.players[i], key=f"name_{i}")
-    with col2:
-        if st.button("Delete", key=f"delete_{i}"):
-            st.session_state.players.pop(i)
-            st.session_state.player_deleted = True  # Set the flag to true if a player is deleted
+# Enhanced player management with dice values
+players_to_delete = []
 
-    # Display six checkboxes in a row using st.columns
-    cols = st.columns(6)
-    for j in range(6):
-        cols[j].checkbox(" ", key=f"checkbox_{i}_{j}", label_visibility="collapsed")
+# Create two columns for the main layout
+main_col1, main_col2 = st.columns([2, 1])
 
-# Check if a player was deleted and refresh the UI
-if st.session_state.player_deleted:
-    st.session_state.player_deleted = False
-    st.experimental_rerun()
+with main_col1:
+    # Player management section
+    for i in range(num_players):
+        if i not in st.session_state.deleted_players:
+            # Create a container for each player's section
+            player_container = st.container()
+            
+            # Player name and delete button row
+            col1, col2 = player_container.columns([4, 1])
+            with col1:
+                st.session_state.players[i] = st.text_input(
+                    f"Enter name for Player {i + 1}:",
+                    value=st.session_state.players[i],
+                    key=f"name_{i}"
+                )
+            with col2:
+                if st.button("Delete", key=f"delete_{i}"):
+                    st.session_state.deleted_players.add(i)
+                    if i in st.session_state.dice_values:
+                        del st.session_state.dice_values[i]
 
-# Display a random card table name when button is clicked
-if st.button("Show"):
+            # Enhanced checkbox layout with dice values
+            checkbox_container = player_container.container()
+            dice_cols = checkbox_container.columns(6)
+            
+            # Initialize dice values if not present
+            if i not in st.session_state.dice_values:
+                st.session_state.dice_values[i] = [False] * 6
+            
+            # Create checkboxes with dice values
+            for j in range(6):
+                dice_value = dice_cols[j].checkbox(
+                    f"Dice {j+1}",
+                    value=st.session_state.dice_values[i][j],
+                    key=f"checkbox_{i}_{j}",
+                    label_visibility="collapsed"
+                )
+                st.session_state.dice_values[i][j] = dice_value
+
+            # Add dice roll button for each player
+            if st.button("Roll Dice", key=f"roll_{i}"):
+                st.session_state.dice_values[i] = [random.choice([True, False]) for _ in range(6)]
+
+with main_col2:
+    # Card table section with original options
+    st.subheader("Card Table")
     card_table_options = ["King's Table", "Queen's Table", "Ace's Table"]
-    dealt_card_table = random.choice(card_table_options)
-    st.write(f"**{dealt_card_table}**")
+    
+    if 'current_table' not in st.session_state:
+        st.session_state.current_table = None
+    
+    if st.button("Show Card Table"):
+        st.session_state.current_table = random.choice(card_table_options)
+    
+    if st.session_state.current_table:
+        st.write(f"**{st.session_state.current_table}**")
 
 # Russian Roulette section below the existing game content
+st.subheader("Russian Roulette")
 
-
-# Russian Roulette functionality
+# Enhanced Russian Roulette functionality
 if st.button("Pull the Trigger"):
-    # Simulate bullet outcome (1 in 6 chance for the bullet to fire)
-    bullet_chamber = random.randint(1, 6)  # The chamber with the bullet
-    trigger_pull = random.randint(1, 6)     # The chamber being pulled
-
+    bullet_chamber = random.randint(1, 6)
+    trigger_pull = random.randint(1, 6)
+    
+    # Create suspense with a progress bar
+    progress_bar = st.progress(0)
+    for i in range(100):
+        progress_bar.progress(i + 1)
+    
     if bullet_chamber == trigger_pull:
-        st.write("💥 **Bang! The bullet fired! You are out!**")
+        st.markdown("💥 **Bang! The bullet fired! You are out!**")
+        st.balloons()
     else:
-        st.write("🔫 **Click! You are safe!**")
+        st.markdown("🔫 **Click! You are safe!**")
+
+# Add a reset button for the entire game
+if st.button("Reset Game"):
+    st.session_state.players = []
+    st.session_state.dice_values = {}
+    st.session_state.deleted_players = set()
+    st.session_state.current_table = None
+    st.rerun()
