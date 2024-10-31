@@ -107,7 +107,7 @@ if st.button("Pull the Trigger"):
         
         for frame in explosion_frames:
             result_container.markdown(frame)
-            time.sleep(0.5)
+            time.sleep(0.3)
     else:
         result_container.markdown("🔫 **Click! You are safe!**")
 
