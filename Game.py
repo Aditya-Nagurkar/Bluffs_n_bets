@@ -7,8 +7,6 @@ st.title("Liar's Dice Game")
 # Initialize session state variables
 if 'players' not in st.session_state:
     st.session_state.players = []
-if 'dice_values' not in st.session_state:
-    st.session_state.dice_values = {}
 if 'deleted_players' not in st.session_state:
     st.session_state.deleted_players = set()
 
@@ -21,7 +19,7 @@ if len(st.session_state.players) < num_players:
 elif len(st.session_state.players) > num_players:
     st.session_state.players = st.session_state.players[:num_players]
 
-# Enhanced player management with dice values
+# Enhanced player management
 players_to_delete = []
 
 # Create two columns for the main layout
@@ -45,34 +43,22 @@ with main_col1:
             with col2:
                 if st.button("Delete", key=f"delete_{i}"):
                     st.session_state.deleted_players.add(i)
-                    if i in st.session_state.dice_values:
-                        del st.session_state.dice_values[i]
 
-            # Enhanced checkbox layout with dice values
+            # Enhanced checkbox layout
             checkbox_container = player_container.container()
             dice_cols = checkbox_container.columns(6)
             
-            # Initialize dice values if not present
-            if i not in st.session_state.dice_values:
-                st.session_state.dice_values[i] = [False] * 6
-            
-            # Create checkboxes with dice values
+            # Create checkboxes
             for j in range(6):
-                dice_value = dice_cols[j].checkbox(
+                dice_cols[j].checkbox(
                     f"Dice {j+1}",
-                    value=st.session_state.dice_values[i][j],
                     key=f"checkbox_{i}_{j}",
                     label_visibility="collapsed"
                 )
-                st.session_state.dice_values[i][j] = dice_value
-
-            # Add dice roll button for each player
-            if st.button("Roll Dice", key=f"roll_{i}"):
-                st.session_state.dice_values[i] = [random.choice([True, False]) for _ in range(6)]
 
 with main_col2:
     # Card table section with original options
-    st.subheader("Card Table")
+    st.subheader("Show")
     card_table_options = ["King's Table", "Queen's Table", "Ace's Table"]
     
     if 'current_table' not in st.session_state:
@@ -106,7 +92,6 @@ if st.button("Pull the Trigger"):
 # Add a reset button for the entire game
 if st.button("Reset Game"):
     st.session_state.players = []
-    st.session_state.dice_values = {}
     st.session_state.deleted_players = set()
     st.session_state.current_table = None
     st.rerun()
