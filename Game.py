@@ -8,6 +8,10 @@ st.title("Liar's Dice Game")
 if 'players' not in st.session_state:
     st.session_state.players = []
 
+# Initialize a flag for UI update after deletion
+if 'player_deleted' not in st.session_state:
+    st.session_state.player_deleted = False
+
 # Get the number of players
 num_players = st.number_input("Enter the number of players:", min_value=1, max_value=10, step=1)
 
@@ -18,8 +22,6 @@ elif len(st.session_state.players) > num_players:
     st.session_state.players = st.session_state.players[:num_players]
 
 # Input player names and display checkboxes for each player in a horizontal layout
-players_to_delete = []  # Temporary list to hold players to delete
-
 for i in range(num_players):
     # Display player name input and delete button in a row
     col1, col2 = st.columns([4, 1])
@@ -27,16 +29,18 @@ for i in range(num_players):
         st.session_state.players[i] = st.text_input(f"Enter name for Player {i + 1}:", value=st.session_state.players[i], key=f"name_{i}")
     with col2:
         if st.button("Delete", key=f"delete_{i}"):
-            players_to_delete.append(i)  # Mark the player index for deletion
+            st.session_state.players.pop(i)
+            st.session_state.player_deleted = True  # Set the flag to true if a player is deleted
 
     # Display six checkboxes in a row using st.columns
     cols = st.columns(6)
     for j in range(6):
         cols[j].checkbox(" ", key=f"checkbox_{i}_{j}", label_visibility="collapsed")
 
-# Delete marked players after the loop
-for index in sorted(players_to_delete, reverse=True):
-    del st.session_state.players[index]
+# Check if a player was deleted and refresh the UI
+if st.session_state.player_deleted:
+    st.session_state.player_deleted = False
+    st.experimental_rerun()
 
 # Display a random card table name when button is clicked
 if st.button("Show"):
@@ -45,6 +49,7 @@ if st.button("Show"):
     st.write(f"**{dealt_card_table}**")
 
 # Russian Roulette section below the existing game content
+
 
 # Russian Roulette functionality
 if st.button("Pull the Trigger"):
