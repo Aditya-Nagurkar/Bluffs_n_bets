@@ -111,9 +111,3 @@ if st.button("Pull the Trigger"):
     else:
         result_container.markdown("🔫 **Click! You are safe!**")
 
-# Add a reset button for the entire game
-if st.button("Reset Game"):
-    st.session_state.players = []
-    st.session_state.deleted_players = set()
-    st.session_state.current_table = None
-    st.rerun()
