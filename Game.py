@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 
 # Title for the game setup
 st.title("Liar's Dice Game")
@@ -58,36 +59,54 @@ with main_col1:
 
 with main_col2:
     # Card table section with original options
-    st.subheader("Show")
+    
     card_table_options = ["King's Table", "Queen's Table", "Ace's Table"]
     
     if 'current_table' not in st.session_state:
         st.session_state.current_table = None
     
-    if st.button("Show Card Table"):
+    if st.button("Show"):
         st.session_state.current_table = random.choice(card_table_options)
     
     if st.session_state.current_table:
         st.write(f"**{st.session_state.current_table}**")
 
 # Russian Roulette section below the existing game content
-st.subheader("Russian Roulette")
 
-# Enhanced Russian Roulette functionality
+
+# Enhanced Russian Roulette functionality with explosion animation
 if st.button("Pull the Trigger"):
     bullet_chamber = random.randint(1, 6)
     trigger_pull = random.randint(1, 6)
     
     # Create suspense with a progress bar
+    progress_text = st.empty()
     progress_bar = st.progress(0)
     for i in range(100):
         progress_bar.progress(i + 1)
     
+    # Result container
+    result_container = st.empty()
+    
     if bullet_chamber == trigger_pull:
-        st.markdown("💥 **Bang! The bullet fired! You are out!**")
-        st.balloons()
+        # Explosion animation sequence
+        explosion_frames = [
+            "💥 *BANG!*",
+            "✨ *BANG!* ✨",
+            "💥 *BANG!* 💥",
+            "✨ *BANG!* ✨",
+            "⚡️ *BANG!* ⚡️",
+            "💥 *BANG!* 💥",
+            "🔥 **BANG! The bullet fired! You are out!** 🔥",
+            "💥 **BANG! The bullet fired! You are out!** 💥",
+            "⚡️ **BANG! The bullet fired! You are out!** ⚡️"
+        ]
+        
+        for frame in explosion_frames:
+            result_container.markdown(frame)
+            time.sleep(0.1)
     else:
-        st.markdown("🔫 **Click! You are safe!**")
+        result_container.markdown("🔫 **Click! You are safe!**")
 
 # Add a reset button for the entire game
 if st.button("Reset Game"):
